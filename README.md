@@ -31,6 +31,10 @@ The review interface shows anonymized candidate numbers such as `Candidate 001`
 instead of workflow or model names. Exported JSON/CSV files still retain the
 underlying candidate identifiers so results can be aggregated after review.
 
+The visible review UI also hides L2 judge scores and reasoning while reviewers
+assign human scores. Project introduction and ASR / architecture-driver context
+are shown below the diagrams to support blind human review.
+
 ## Included Data
 
 This deployment contains a stratified human-review sample generated from the

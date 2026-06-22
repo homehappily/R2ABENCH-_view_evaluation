@@ -21,6 +21,10 @@ const demoData = {
       title: "demo-sample / direct/gpt-5",
       ground_truth_image: "",
       candidate_image: "",
+      project_context: {
+        introduction: "This demo sample represents a requirements-to-architecture review target.",
+        asr: "NFR-001 Traceability: architecture elements should be linked to requirements evidence.\nC-001 Static review frontend: the annotation workflow runs without a backend.",
+      },
       pred_source: "@startuml\ncomponent Web\ncomponent API\nWeb --> API\n@enduml",
       gt_source: "@startuml\ncomponent Client\ncomponent Service\nClient --> Service\n@enduml",
       metrics: {
@@ -62,32 +66,42 @@ const els = {
   sampleTitle: document.querySelector("#sampleTitle"),
   sampleMeta: document.querySelector("#sampleMeta"),
   candidateTabs: document.querySelector("#candidateTabs"),
-  candidateMetrics: document.querySelector("#candidateMetrics"),
   referenceSubtitle: document.querySelector("#referenceSubtitle"),
   candidateTitle: document.querySelector("#candidateTitle"),
   candidateSubtitle: document.querySelector("#candidateSubtitle"),
   referenceFrame: document.querySelector("#referenceFrame"),
   candidateFrame: document.querySelector("#candidateFrame"),
+  introductionText: document.querySelector("#introductionText"),
+  asrText: document.querySelector("#asrText"),
   prevCandidate: document.querySelector("#prevCandidate"),
   nextCandidate: document.querySelector("#nextCandidate"),
   overallStatus: document.querySelector("#overallStatus"),
   reviewSummary: document.querySelector("#reviewSummary"),
   reviewForm: document.querySelector("#reviewForm"),
   overallNote: document.querySelector("#overallNote"),
+  imageDialog: document.querySelector("#imageDialog"),
+  imageDialogTitle: document.querySelector("#imageDialogTitle"),
+  imageDialogImg: document.querySelector("#imageDialogImg"),
+  closeImageDialog: document.querySelector("#closeImageDialog"),
+  zoomOutImage: document.querySelector("#zoomOutImage"),
+  resetImageZoom: document.querySelector("#resetImageZoom"),
+  zoomInImage: document.querySelector("#zoomInImage"),
 };
 
 const query = new URLSearchParams(window.location.search);
+const requestedView = query.get("view");
 let data = demoData;
 let grouped = new Map();
 let sampleKeys = [];
 let filteredSampleKeys = [];
 let currentSampleKey = "";
 let currentCandidateIndex = 0;
-let currentView = query.get("view") || "images";
+let currentView = ["images", "source"].includes(requestedView) ? requestedView : "images";
 let reviewerId = query.get("reviewer") || localStorage.getItem("ma4sa-evalstudio-reviewer") || "";
 let sessionId = query.get("session") || localStorage.getItem("ma4sa-evalstudio-session") || defaultSessionId();
 let reviews = {};
 let activeStoreKey = "";
+let imageZoom = 1;
 let filters = {
   search: "",
   dataset: "all",
@@ -200,6 +214,13 @@ function wireEvents() {
   els.exportJson.addEventListener("click", exportJson);
   els.exportCsv.addEventListener("click", exportCsv);
   els.clearLocal.addEventListener("click", clearLocalReviews);
+  els.closeImageDialog.addEventListener("click", closeImageViewer);
+  els.zoomOutImage.addEventListener("click", () => setImageZoom(imageZoom - 0.25));
+  els.resetImageZoom.addEventListener("click", () => setImageZoom(1));
+  els.zoomInImage.addEventListener("click", () => setImageZoom(imageZoom + 0.25));
+  els.imageDialog.addEventListener("click", (event) => {
+    if (event.target === els.imageDialog) closeImageViewer();
+  });
 }
 
 function normalizeData() {
@@ -359,6 +380,8 @@ function renderCurrentSample() {
     els.candidateTabs.innerHTML = "";
     els.referenceFrame.textContent = "No sample data.";
     els.candidateFrame.textContent = "No candidate data.";
+    els.introductionText.textContent = "";
+    els.asrText.textContent = "";
     els.reviewForm.innerHTML = "";
     return;
   }
@@ -370,7 +393,6 @@ function renderCurrentSample() {
   els.sampleMeta.innerHTML = [
     sample.dataset_id,
     candidateLabel(sample),
-    sample.metrics?.l2_status ? `L2: ${sample.metrics.l2_status}` : "",
   ]
     .filter(Boolean)
     .map((item) => `<span>${escapeHtml(item)}</span>`)
@@ -381,26 +403,13 @@ function renderCurrentSample() {
   els.prevCandidate.disabled = samplePosition <= 1 && currentCandidateIndex <= 0;
   els.nextCandidate.disabled = samplePosition >= filteredSampleKeys.length && currentCandidateIndex >= candidates.length - 1;
 
-  renderMetrics(sample);
   renderFrames(sample);
+  renderProjectContext(sample);
   renderReviewForm(sample);
 }
 
 function renderMetrics(sample) {
-  const metrics = sample.metrics || {};
-  const items = [
-    ["L0", metrics.l0_valid || ""],
-    ["Nodes", metrics.l0_node_count || ""],
-    ["Edges", metrics.l0_edge_count || ""],
-    ["Node F1", formatNumber(metrics.l1_node_f1)],
-    ["Edge F1", formatNumber(metrics.l1_edge_f1)],
-    ["GED Acc", formatNumber(metrics.l1_ged_accuracy)],
-    ["Unsupported", formatNumber(metrics.l2_unsupported_inference_rate)],
-  ].filter(([, value]) => value !== "");
-
-  els.candidateMetrics.innerHTML = items
-    .map(([label, value]) => `<span class="metric"><b>${escapeHtml(label)}</b>${escapeHtml(value)}</span>`)
-    .join("");
+  return sample;
 }
 
 function renderFrames(sample) {
@@ -409,13 +418,8 @@ function renderFrames(sample) {
     renderCode(els.candidateFrame, sample.pred_source, "No candidate PlantUML source was included.");
     return;
   }
-  if (currentView === "raw") {
-    renderCode(els.referenceFrame, JSON.stringify(sample.metrics || {}, null, 2), "No metrics.");
-    renderCode(els.candidateFrame, JSON.stringify(publicRawResult(sample), null, 2), "No public raw row.");
-    return;
-  }
-  renderImage(els.referenceFrame, sample.ground_truth_image, "No reference image. Use --dataset-dir or --gt-image-dir when preparing samples.");
-  renderImage(els.candidateFrame, sample.candidate_image, sample.pred_source ? "No rendered candidate image. Switch to PlantUML view." : "No candidate image or source included.");
+  renderImage(els.referenceFrame, sample.ground_truth_image, "No reference image. Use --dataset-dir or --gt-image-dir when preparing samples.", "Reference");
+  renderImage(els.candidateFrame, sample.candidate_image, sample.pred_source ? "No rendered candidate image. Switch to PlantUML view." : "No candidate image or source included.", candidateLabel(sample));
 }
 
 function publicRawResult(sample) {
@@ -438,19 +442,64 @@ function publicRawResult(sample) {
   return visible;
 }
 
-function renderImage(container, src, fallbackText) {
+function renderImage(container, src, fallbackText, label) {
   container.innerHTML = "";
   if (src) {
+    const card = document.createElement("div");
+    card.className = "image-card";
+    const tools = document.createElement("div");
+    tools.className = "image-tools";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = "Enlarge";
+    button.addEventListener("click", () => openImageViewer(src, label));
     const img = document.createElement("img");
     img.src = src;
-    img.alt = "Architecture diagram";
+    img.alt = `${label} architecture diagram`;
+    img.addEventListener("dblclick", () => openImageViewer(src, label));
+    tools.appendChild(button);
+    card.appendChild(tools);
+    card.appendChild(img);
     container.classList.remove("empty-state", "code-state");
-    container.appendChild(img);
+    container.appendChild(card);
   } else {
     container.classList.add("empty-state");
     container.classList.remove("code-state");
     container.textContent = fallbackText;
   }
+}
+
+function renderProjectContext(sample) {
+  const context = sample.project_context || {};
+  els.introductionText.textContent = cleanContextText(context.introduction) || "No introduction was included for this project.";
+  els.asrText.textContent = cleanContextText(context.asr) || "No ASR or architecture-driver summary was included for this project.";
+}
+
+function cleanContextText(value) {
+  return String(value || "").trim();
+}
+
+function openImageViewer(src, title) {
+  imageZoom = 1;
+  els.imageDialogTitle.textContent = title || "Architecture diagram";
+  els.imageDialogImg.src = src;
+  els.imageDialogImg.alt = `${title || "Expanded"} architecture diagram`;
+  applyImageZoom();
+  els.imageDialog.showModal();
+}
+
+function closeImageViewer() {
+  els.imageDialog.close();
+}
+
+function setImageZoom(value) {
+  imageZoom = Math.min(3, Math.max(0.5, value));
+  applyImageZoom();
+}
+
+function applyImageZoom() {
+  els.imageDialogImg.style.width = `${Math.round(imageZoom * 100)}%`;
+  els.imageDialogImg.style.maxWidth = imageZoom === 1 ? "100%" : "none";
 }
 
 function renderCode(container, source, fallbackText) {
@@ -477,28 +526,15 @@ function renderReviewForm(sample) {
 
   els.reviewForm.innerHTML = "";
   data.dimensions.forEach((dimension, index) => {
-    const score = sample.model_scores?.[dimension.id] || {};
     const saved = review.decisions?.[dimension.id] || {};
     const card = document.createElement("section");
     card.className = `dimension-card ${isDecisionComplete(saved) ? "complete" : ""}`;
     card.innerHTML = `
       <div class="dimension-head">
-        <div>
-          <div class="dimension-title">${index + 1}. ${escapeHtml(dimension.label)}</div>
-          <div class="dimension-description">${escapeHtml(dimension.description || "")}</div>
-        </div>
-        <div class="model-score">${escapeHtml(score.score || "-")}</div>
-      </div>
-      <div class="llm-says">
-        <div class="llm-head">
-          <span class="badge">L2 judge</span>
-          <span class="verdict">${scoreLabel(score.score)}</span>
-        </div>
-        <p class="reasoning">${escapeHtml(score.reasoning || "No model reasoning was provided.")}</p>
+        <div class="dimension-title">${index + 1}. ${escapeHtml(dimension.label)}</div>
+        <div class="dimension-description">${escapeHtml(dimension.description || "")}</div>
       </div>
       <div class="decision-row">
-        <button class="decision agree ${saved.agree === true ? "active" : ""}" data-value="agree" type="button">Agree</button>
-        <button class="decision disagree ${saved.agree === false ? "active" : ""}" data-value="disagree" type="button">Disagree</button>
         <select class="score-select" aria-label="Human score">
           <option value="">Human score</option>
           ${[1, 2, 3, 4, 5].map((value) => `<option value="${value}" ${String(saved.human_score || "") === String(value) ? "selected" : ""}>${value}</option>`).join("")}
@@ -508,10 +544,8 @@ function renderReviewForm(sample) {
           ${["low", "medium", "high"].map((value) => `<option value="${value}" ${String(saved.confidence || "") === value ? "selected" : ""}>${titleCase(value)}</option>`).join("")}
         </select>
       </div>
-      <textarea class="justification" placeholder="Evidence, correction, or reason for disagreement.">${escapeHtml(saved.justification || "")}</textarea>
+      <textarea class="justification" placeholder="Evidence or rationale for the human score.">${escapeHtml(saved.justification || "")}</textarea>
     `;
-    card.querySelector('[data-value="agree"]').addEventListener("click", () => updateDecision(sample, dimension.id, { agree: true }));
-    card.querySelector('[data-value="disagree"]').addEventListener("click", () => updateDecision(sample, dimension.id, { agree: false }));
     card.querySelector(".score-select").addEventListener("change", (event) => updateDecision(sample, dimension.id, { human_score: event.target.value }));
     card.querySelector(".confidence-select").addEventListener("change", (event) => updateDecision(sample, dimension.id, { confidence: event.target.value }));
     card.querySelector(".justification").addEventListener("input", (event) => updateDecision(sample, dimension.id, { justification: event.target.value }, false));
@@ -646,7 +680,7 @@ function reviewStatus(sample) {
 }
 
 function isDecisionComplete(decision) {
-  return Boolean(decision && typeof decision.agree === "boolean" && decision.human_score);
+  return Boolean(decision && decision.human_score);
 }
 
 function countStatuses(candidates) {

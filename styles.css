@@ -26,10 +26,16 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   color: var(--text);
   background: var(--bg);
+  overflow: hidden;
 }
 
 button,
@@ -48,7 +54,7 @@ button:disabled {
   display: grid;
   grid-template-columns: 288px minmax(620px, 1fr) 420px;
   height: 100vh;
-  min-height: 720px;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -62,9 +68,12 @@ button:disabled {
 
 .sidebar {
   display: flex;
+  height: 100vh;
   min-width: 0;
   flex-direction: column;
   border-right: 1px solid var(--line);
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .brand {
@@ -209,10 +218,11 @@ button:disabled {
 }
 
 .sample-list {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 220px;
+  min-height: 180px;
   overflow: auto;
   padding: 8px;
+  scrollbar-gutter: stable;
 }
 
 .sample-item {
@@ -296,8 +306,11 @@ button:disabled {
 
 .workspace {
   display: flex;
+  height: 100vh;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .topbar {
@@ -405,7 +418,7 @@ h1 {
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   min-height: 54px;
   padding: 9px 16px;
@@ -438,27 +451,10 @@ h1 {
   box-shadow: 0 1px 5px rgba(23, 34, 51, 0.12);
 }
 
-.metrics-strip {
-  display: flex;
-  min-width: 0;
-  justify-content: flex-end;
-  gap: 6px;
-  overflow-x: auto;
-}
-
-.metric {
-  flex: 0 0 auto;
-}
-
-.metric b {
-  margin-right: 5px;
-  color: var(--text);
-}
-
 .comparison {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
 }
 
@@ -509,6 +505,29 @@ h1 {
   padding: 18px;
   overflow: auto;
   background: #f4f7fa;
+  scrollbar-gutter: stable;
+}
+
+.image-card {
+  min-width: min-content;
+}
+
+.image-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.image-tools button {
+  height: 30px;
+  padding: 0 10px;
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 850;
+  background: var(--accent-soft);
+  border: 1px solid #c4dfd6;
+  border-radius: 6px;
+  cursor: pointer;
 }
 
 .canvas img {
@@ -520,6 +539,7 @@ h1 {
   border: 1px solid var(--line);
   border-radius: 7px;
   box-shadow: var(--shadow);
+  cursor: zoom-in;
 }
 
 .empty-state {
@@ -558,12 +578,49 @@ h1 {
   border-top: 1px solid var(--line);
 }
 
+.project-context {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  flex: 0 0 auto;
+  max-height: 190px;
+  overflow: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  scrollbar-gutter: stable;
+}
+
+.context-card {
+  min-width: 0;
+  padding: 12px 14px 14px;
+  border-right: 1px solid var(--line);
+}
+
+.context-card:last-child {
+  border-right: 0;
+}
+
+.context-card h2 {
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.context-text {
+  color: #39495b;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
 .review-panel {
   display: flex;
+  height: 100vh;
   min-width: 0;
   flex-direction: column;
   border-left: 1px solid var(--line);
-  overflow: hidden;
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 .panel-heading {
@@ -593,9 +650,7 @@ h1 {
 }
 
 .review-form {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+  flex: 0 0 auto;
   padding: 14px 14px 16px;
 }
 
@@ -614,10 +669,7 @@ h1 {
 }
 
 .dimension-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 34px;
-  gap: 12px;
-  align-items: start;
+  display: block;
   margin-bottom: 10px;
 }
 
@@ -632,34 +684,6 @@ h1 {
   color: var(--muted);
   font-size: 11px;
   line-height: 1.4;
-}
-
-.model-score {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 900;
-  background: var(--navy);
-  border-radius: 7px;
-}
-
-.llm-says {
-  padding: 11px;
-  background: var(--surface-soft);
-  border: 1px solid var(--line);
-  border-radius: 7px;
-}
-
-.llm-head {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 7px;
-  font-size: 11px;
-  font-weight: 900;
 }
 
 .badge {
@@ -681,7 +705,7 @@ h1 {
 
 .decision-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 106px 104px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   margin-top: 10px;
 }
@@ -732,6 +756,84 @@ h1 {
   min-height: 70px;
 }
 
+.image-dialog {
+  width: min(94vw, 1400px);
+  height: min(92vh, 920px);
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 24px 80px rgba(12, 20, 32, 0.32);
+}
+
+.image-dialog::backdrop {
+  background: rgba(11, 18, 32, 0.64);
+}
+
+.image-dialog-shell {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.image-dialog-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.image-dialog-bar span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-dialog-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.image-dialog-actions button {
+  height: 30px;
+  padding: 0 10px;
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 850;
+  background: #edf2f6;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.image-dialog-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  background: #f4f7fa;
+}
+
+.image-dialog-body img {
+  display: block;
+  margin: 0 auto;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  box-shadow: var(--shadow);
+}
+
 @media (max-width: 1260px) {
   .app-shell {
     grid-template-columns: 248px minmax(540px, 1fr) 370px;
@@ -761,7 +863,8 @@ h1 {
 
   .topbar,
   .toolbar,
-  .comparison {
+  .comparison,
+  .project-context {
     grid-template-columns: 1fr;
   }
 
@@ -787,6 +890,21 @@ h1 {
   }
 
   .canvas img {
+    max-height: none;
+  }
+
+  body {
+    overflow: auto;
+  }
+
+  .sidebar,
+  .workspace,
+  .review-panel {
+    height: auto;
+    overflow: visible;
+  }
+
+  .project-context {
     max-height: none;
   }
 }

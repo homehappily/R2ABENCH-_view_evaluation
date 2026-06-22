@@ -83,9 +83,7 @@
           <div class="segmented" role="tablist" aria-label="Workspace view">
             <button class="segment active" data-view="images">Diagrams</button>
             <button class="segment" data-view="source">PlantUML</button>
-            <button class="segment" data-view="raw">Raw row</button>
           </div>
-          <div id="candidateMetrics" class="metrics-strip"></div>
         </section>
 
         <section class="comparison" aria-label="Diagram comparison">
@@ -105,6 +103,17 @@
           </article>
         </section>
 
+        <section class="project-context" aria-label="Project context">
+          <article class="context-card">
+            <h2>Introduction</h2>
+            <div id="introductionText" class="context-text"></div>
+          </article>
+          <article class="context-card">
+            <h2>ASR / Architecture Drivers</h2>
+            <div id="asrText" class="context-text"></div>
+          </article>
+        </section>
+
         <footer class="workspace-footer">
           <button id="prevCandidate" class="nav-button">Previous</button>
           <button id="nextCandidate" class="nav-button primary">Next</button>
@@ -115,7 +124,7 @@
         <div class="panel-heading">
           <div>
             <h2>Human Review</h2>
-            <p>Audit the L2 judge and record calibrated human scores.</p>
+            <p>Record independent human scores for this candidate.</p>
           </div>
           <select id="overallStatus" class="status-select" aria-label="Candidate review status">
             <option value="not_started">Not started</option>
@@ -134,6 +143,23 @@
         </div>
       </aside>
     </div>
+
+    <dialog id="imageDialog" class="image-dialog" aria-label="Expanded architecture diagram">
+      <div class="image-dialog-shell">
+        <header class="image-dialog-bar">
+          <span id="imageDialogTitle">Architecture diagram</span>
+          <div class="image-dialog-actions">
+            <button id="zoomOutImage" type="button">-</button>
+            <button id="resetImageZoom" type="button">Fit</button>
+            <button id="zoomInImage" type="button">+</button>
+            <button id="closeImageDialog" type="button">Close</button>
+          </div>
+        </header>
+        <div class="image-dialog-body">
+          <img id="imageDialogImg" alt="Expanded architecture diagram" />
+        </div>
+      </div>
+    </dialog>
 
     <script src="./app.js"></script>
   </body>
