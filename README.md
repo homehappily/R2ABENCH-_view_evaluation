@@ -27,6 +27,10 @@ https://homehappily.github.io/R2ABENCH-_view_evaluation/?reviewer=alice&session=
 This is a static site. Reviews are autosaved in each browser's local storage,
 but they are not uploaded to GitHub automatically.
 
+The review interface shows anonymized candidate numbers such as `Candidate 001`
+instead of workflow or model names. Exported JSON/CSV files still retain the
+underlying candidate identifiers so results can be aggregated after review.
+
 ## Included Data
 
 This deployment contains a stratified human-review sample generated from the

@@ -205,6 +205,7 @@ function wireEvents() {
 function normalizeData() {
   data.dimensions = data.dimensions && data.dimensions.length ? data.dimensions : dimensionsFallback;
   data.samples = data.samples || [];
+  assignCandidateLabels();
   grouped = new Map();
 
   for (const sample of data.samples) {
@@ -214,7 +215,7 @@ function normalizeData() {
   }
 
   for (const candidates of grouped.values()) {
-    candidates.sort((a, b) => candidateLabel(a).localeCompare(candidateLabel(b)));
+    candidates.sort((a, b) => candidateLabel(a).localeCompare(candidateLabel(b), undefined, { numeric: true }));
   }
 
   sampleKeys = Array.from(grouped.keys()).sort((a, b) => a.localeCompare(b));
@@ -224,9 +225,16 @@ function normalizeData() {
   applyFilters();
 }
 
+function assignCandidateLabels() {
+  const width = Math.max(3, String(data.samples.length || 1).length);
+  data.samples.forEach((sample, index) => {
+    sample.review_label = `Candidate ${String(index + 1).padStart(width, "0")}`;
+  });
+}
+
 function populateFilters() {
   fillSelect(els.datasetFilter, "All datasets", uniqueValues(data.samples.map((sample) => sample.dataset_id || "Unspecified")));
-  fillSelect(els.candidateFilter, "All candidates", uniqueValues(data.samples.map((sample) => candidateLabel(sample))));
+  fillSelect(els.candidateFilter, "All candidate numbers", uniqueValues(data.samples.map((sample) => candidateLabel(sample))));
   els.datasetFilter.value = filters.dataset;
   els.candidateFilter.value = filters.candidate;
 }
@@ -255,12 +263,9 @@ function applyFilters() {
 function candidateMatchesFilters(sample, key) {
   const haystack = [
     key,
-    sample.title,
     sample.sample_id,
     sample.dataset_id,
-    sample.workflow,
-    sample.model_id,
-    sample.candidate_id,
+    candidateLabel(sample),
   ]
     .filter(Boolean)
     .join(" ")
@@ -291,7 +296,7 @@ function renderProgress() {
   const visibleCandidates = candidates.filter((sample) => candidateMatchesFilters(sample, sample.sample_id || ""));
   const complete = candidates.filter((sample) => reviewStatus(sample) === "complete").length;
   const percent = candidates.length ? Math.round((complete / candidates.length) * 100) : 0;
-  els.queueStats.textContent = `${visibleCandidates.length} visible / ${candidates.length} candidates`;
+  els.queueStats.textContent = `${visibleCandidates.length} shown / ${candidates.length} total`;
   els.progressStats.textContent = `${complete}/${candidates.length} complete`;
   els.progressBar.style.width = `${percent}%`;
 }
@@ -315,7 +320,7 @@ function renderSampleList() {
     button.title = key;
     button.innerHTML = `
       <span class="sample-item-title">${escapeHtml(key)}</span>
-      <span class="sample-item-meta">${candidates.length} candidates | ${statusCounts.complete} done</span>
+      <span class="sample-item-meta">${candidates.length} variants | ${statusCounts.complete} done</span>
     `;
     button.addEventListener("click", () => {
       currentSampleKey = key;
@@ -361,11 +366,10 @@ function renderCurrentSample() {
   const candidates = currentCandidates();
   const samplePosition = filteredSampleKeys.indexOf(currentSampleKey) + 1;
   els.sampleCounter.textContent = `Sample ${samplePosition || 1} of ${filteredSampleKeys.length || sampleKeys.length}`;
-  els.sampleTitle.textContent = sample.title || `${sample.sample_id} / ${candidateLabel(sample)}`;
+  els.sampleTitle.textContent = sample.sample_id || "Untitled sample";
   els.sampleMeta.innerHTML = [
     sample.dataset_id,
-    sample.workflow,
-    sample.model_id,
+    candidateLabel(sample),
     sample.metrics?.l2_status ? `L2: ${sample.metrics.l2_status}` : "",
   ]
     .filter(Boolean)
@@ -373,7 +377,7 @@ function renderCurrentSample() {
     .join("");
   els.candidateTitle.textContent = candidateLabel(sample);
   els.referenceSubtitle.textContent = sample.gt_path ? shortPath(sample.gt_path) : "";
-  els.candidateSubtitle.textContent = sample.pred_path ? shortPath(sample.pred_path) : "";
+  els.candidateSubtitle.textContent = sample.candidate_image ? "Rendered candidate diagram" : "Candidate source only";
   els.prevCandidate.disabled = samplePosition <= 1 && currentCandidateIndex <= 0;
   els.nextCandidate.disabled = samplePosition >= filteredSampleKeys.length && currentCandidateIndex >= candidates.length - 1;
 
@@ -407,11 +411,31 @@ function renderFrames(sample) {
   }
   if (currentView === "raw") {
     renderCode(els.referenceFrame, JSON.stringify(sample.metrics || {}, null, 2), "No metrics.");
-    renderCode(els.candidateFrame, JSON.stringify(sample.raw_result || {}, null, 2), "No raw row.");
+    renderCode(els.candidateFrame, JSON.stringify(publicRawResult(sample), null, 2), "No public raw row.");
     return;
   }
   renderImage(els.referenceFrame, sample.ground_truth_image, "No reference image. Use --dataset-dir or --gt-image-dir when preparing samples.");
   renderImage(els.candidateFrame, sample.candidate_image, sample.pred_source ? "No rendered candidate image. Switch to PlantUML view." : "No candidate image or source included.");
+}
+
+function publicRawResult(sample) {
+  const hiddenFields = new Set([
+    "candidate_id",
+    "workflow",
+    "model_id",
+    "pred_path",
+    "prediction_path",
+    "candidate_path",
+  ]);
+  const raw = sample.raw_result || {};
+  const visible = {
+    review_candidate: candidateLabel(sample),
+  };
+  for (const [key, value] of Object.entries(raw)) {
+    if (hiddenFields.has(key)) continue;
+    visible[key] = value;
+  }
+  return visible;
 }
 
 function renderImage(container, src, fallbackText) {
@@ -777,7 +801,7 @@ function scoreLabel(score) {
 }
 
 function candidateLabel(sample) {
-  return sample.candidate_id || [sample.workflow, sample.model_id].filter(Boolean).join("/") || "candidate";
+  return sample.review_label || "Candidate";
 }
 
 function uniqueValues(values) {
