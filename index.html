@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MA4SA EvalStudio</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Review queue">
+        <div class="brand">
+          <div class="brand-mark">M</div>
+          <div>
+            <div class="brand-name">MA4SA EvalStudio</div>
+            <div class="brand-subtitle">Architecture review calibration</div>
+          </div>
+        </div>
+
+        <section class="control-block">
+          <label class="field-label" for="reviewerInput">Reviewer</label>
+          <input id="reviewerInput" class="text-input" autocomplete="off" placeholder="reviewer-id" />
+          <label class="field-label" for="sessionInput">Session</label>
+          <input id="sessionInput" class="text-input" autocomplete="off" placeholder="pilot-01" />
+          <div id="autosaveText" class="autosave">Autosave ready</div>
+        </section>
+
+        <section class="control-block compact">
+          <label class="upload-control">
+            <input id="sampleUpload" type="file" accept="application/json" />
+            Load samples JSON
+          </label>
+          <label class="upload-control secondary">
+            <input id="reviewUpload" type="file" accept="application/json" />
+            Import review JSON
+          </label>
+        </section>
+
+        <section class="control-block compact">
+          <label class="field-label" for="searchInput">Find sample</label>
+          <input id="searchInput" class="text-input" placeholder="sample, model, workflow" />
+          <div class="filter-grid">
+            <select id="datasetFilter" class="select-input" aria-label="Dataset filter"></select>
+            <select id="candidateFilter" class="select-input" aria-label="Candidate filter"></select>
+            <select id="statusFilter" class="select-input" aria-label="Status filter">
+              <option value="all">All status</option>
+              <option value="not_started">Not started</option>
+              <option value="in_progress">In progress</option>
+              <option value="complete">Complete</option>
+              <option value="skipped">Skipped</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="progress-block">
+          <div class="stat-row">
+            <span id="queueStats">0 candidates</span>
+            <span id="progressStats">0%</span>
+          </div>
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        </section>
+
+        <div id="sampleList" class="sample-list" role="list"></div>
+
+        <div class="sidebar-actions">
+          <button id="exportJson" class="action primary">Export JSON</button>
+          <button id="exportCsv" class="action secondary">Export CSV</button>
+          <button id="clearLocal" class="action ghost">Clear local reviewer data</button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="sample-heading">
+            <div id="sampleCounter" class="utility-label">No sample loaded</div>
+            <h1 id="sampleTitle">MA4SA evaluation review</h1>
+            <div id="sampleMeta" class="sample-meta"></div>
+          </div>
+          <nav id="candidateTabs" class="candidate-tabs" aria-label="Candidate tabs"></nav>
+        </header>
+
+        <section class="toolbar" aria-label="Review workspace controls">
+          <div class="segmented" role="tablist" aria-label="Workspace view">
+            <button class="segment active" data-view="images">Diagrams</button>
+            <button class="segment" data-view="source">PlantUML</button>
+            <button class="segment" data-view="raw">Raw row</button>
+          </div>
+          <div id="candidateMetrics" class="metrics-strip"></div>
+        </section>
+
+        <section class="comparison" aria-label="Diagram comparison">
+          <article class="pane">
+            <div class="pane-title">
+              <span>Reference</span>
+              <span id="referenceSubtitle" class="pane-subtitle"></span>
+            </div>
+            <div id="referenceFrame" class="canvas empty-state"></div>
+          </article>
+          <article class="pane candidate-pane">
+            <div class="pane-title accent">
+              <span id="candidateTitle">Candidate</span>
+              <span id="candidateSubtitle" class="pane-subtitle"></span>
+            </div>
+            <div id="candidateFrame" class="canvas empty-state"></div>
+          </article>
+        </section>
+
+        <footer class="workspace-footer">
+          <button id="prevCandidate" class="nav-button">Previous</button>
+          <button id="nextCandidate" class="nav-button primary">Next</button>
+        </footer>
+      </main>
+
+      <aside class="review-panel" aria-label="Human review form">
+        <div class="panel-heading">
+          <div>
+            <h2>Human Review</h2>
+            <p>Audit the L2 judge and record calibrated human scores.</p>
+          </div>
+          <select id="overallStatus" class="status-select" aria-label="Candidate review status">
+            <option value="not_started">Not started</option>
+            <option value="in_progress">In progress</option>
+            <option value="complete">Complete</option>
+            <option value="skipped">Skipped</option>
+          </select>
+        </div>
+
+        <div id="reviewSummary" class="review-summary"></div>
+        <div id="reviewForm" class="review-form"></div>
+
+        <div class="overall-note">
+          <label class="field-label" for="overallNote">Overall note</label>
+          <textarea id="overallNote" placeholder="Optional sample-level note for this candidate."></textarea>
+        </div>
+      </aside>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
