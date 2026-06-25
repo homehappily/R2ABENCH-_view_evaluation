@@ -1,6 +1,6 @@
 # R2ABENCH View Evaluation
 
-Static GitHub Pages site for MA4SA / R2ABENCH human review calibration.
+Static GitHub Pages site for R2ABench human review calibration.
 
 ## Open The Review Site
 
