@@ -582,16 +582,18 @@ h1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
-  flex: 0 0 auto;
-  max-height: 190px;
-  overflow: auto;
+  flex: 0 0 190px;
+  min-height: 0;
+  overflow: hidden;
   background: var(--surface);
   border-top: 1px solid var(--line);
-  scrollbar-gutter: stable;
 }
 
 .context-card {
+  display: flex;
+  min-height: 0;
   min-width: 0;
+  flex-direction: column;
   padding: 12px 14px 14px;
   border-right: 1px solid var(--line);
 }
@@ -601,16 +603,22 @@ h1 {
 }
 
 .context-card h2 {
+  flex: 0 0 auto;
   margin-bottom: 8px;
   color: var(--text);
   font-size: 13px;
 }
 
 .context-text {
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding-right: 8px;
   color: #39495b;
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;
+  scrollbar-gutter: stable;
 }
 
 .review-panel {
@@ -905,6 +913,13 @@ h1 {
   }
 
   .project-context {
+    height: auto;
     max-height: none;
+    overflow: visible;
+  }
+
+  .context-card {
+    min-height: 220px;
+    max-height: 320px;
   }
 }

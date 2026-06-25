@@ -23,6 +23,7 @@ const demoData = {
       candidate_image: "",
       project_context: {
         introduction: "This demo sample represents a requirements-to-architecture review target.",
+        functional_requirements: "FR-001 The system shall present architecture candidates for human review.\nFR-002 The system shall export completed review records for later comparison.",
         asr: "NFR-001 Traceability: architecture elements should be linked to requirements evidence.\nC-001 Static review frontend: the annotation workflow runs without a backend.",
       },
       pred_source: "@startuml\ncomponent Web\ncomponent API\nWeb --> API\n@enduml",
@@ -471,8 +472,9 @@ function renderImage(container, src, fallbackText, label) {
 
 function renderProjectContext(sample) {
   const context = sample.project_context || {};
+  const functionalRequirements = context.functional_requirements || context.requirements || context.asr;
   els.introductionText.textContent = cleanContextText(context.introduction) || "No introduction was included for this project.";
-  els.asrText.textContent = cleanContextText(context.asr) || "No ASR or architecture-driver summary was included for this project.";
+  els.asrText.textContent = cleanContextText(functionalRequirements) || "No functional requirements were included for this project.";
 }
 
 function cleanContextText(value) {
